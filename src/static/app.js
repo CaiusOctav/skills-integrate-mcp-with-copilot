@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
+        const emailInput = document.getElementById("email");
         const spotsLeft =
           details.max_participants - details.participants.length;
 
@@ -60,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".delete-btn").forEach((button) => {
         button.addEventListener("click", handleUnregister);
       });
+                <button class="register-btn" data-activity="${name}">Register Student</button>
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -75,6 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
+            // Add event listeners to register buttons
+            document.querySelectorAll(".register-btn").forEach((button) => {
+              button.addEventListener("click", handleRegister);
+            });
         `/activities/${encodeURIComponent(
           activity
         )}/unregister?email=${encodeURIComponent(email)}`,
@@ -82,6 +88,47 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "DELETE",
         }
       );
+        // Handle per-activity registration
+        async function handleRegister(event) {
+          const activity = event.target.getAttribute("data-activity");
+          const email = emailInput.value;
+          if (!email) {
+            messageDiv.textContent = "Please enter a student email above before registering.";
+            messageDiv.className = "error";
+            messageDiv.classList.remove("hidden");
+            setTimeout(() => {
+              messageDiv.classList.add("hidden");
+            }, 3000);
+            return;
+          }
+          try {
+            const response = await fetch(
+              `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(email)}`,
+              {
+                method: "POST",
+              }
+            );
+            const result = await response.json();
+            if (response.ok) {
+              messageDiv.textContent = result.message;
+              messageDiv.className = "success";
+              emailInput.value = "";
+              fetchActivities();
+            } else {
+              messageDiv.textContent = result.detail || "An error occurred";
+              messageDiv.className = "error";
+            }
+            messageDiv.classList.remove("hidden");
+            setTimeout(() => {
+              messageDiv.classList.add("hidden");
+            }, 5000);
+          } catch (error) {
+            messageDiv.textContent = "Failed to sign up. Please try again.";
+            messageDiv.className = "error";
+            messageDiv.classList.remove("hidden");
+            console.error("Error signing up:", error);
+          }
+        }
 
       const result = await response.json();
 
